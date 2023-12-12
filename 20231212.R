@@ -1,6 +1,7 @@
 # Packages ---------------------------------------------------------------------
 
 library(tidyverse)
+library(gganimate)
 
 # Data -------------------------------------------------------------------------
 
@@ -9,22 +10,17 @@ list2env(tt, envir = .GlobalEnv)
 
 # Wrangle ----------------------------------------------------------------------
 
-holiday_movies <- holiday_movies %>%
-  filter(christmas | holiday) %>%
+holiday_movie_genres %>%
+  filter(genres %in% c("Comedy", "Drama", "Romance", "Family", "Animation",
+                       "Fantasy", "Adventure", "Documentary", "Short",
+                       "Music")) %>%
+  left_join(select(holiday_movies, tconst, year), by = "tconst") %>%
+  count(year, genres) %>%
+  group_by(year) %>%
   mutate(
-    christmas_holiday = if_else(christmas, "Christmas", "Holiday")
-  )
-
-# Plot -------------------------------------------------------------------------
-
-holiday_movies %>%
-  ggplot(aes(year, fill = christmas_holiday)) +
-  geom_bar(position = "dodge") +
-  scale_fill_manual(values = c("red", "forestgreen")) +
-  scale_x_continuous(n.breaks = 10) +
-  labs(fill = "", x = "Year", y = "Count",
-       title = "The use of \"Christmas\" or \"Holiday\" over the years") +
-  theme_minimal() +
-  theme(legend.position = "bottom",
-        title = element_text(size = 16, face = "bold"),
-        plot.background = element_rect(fill = "floralwhite"))
+    rank = rank(-n, ties.method = "random")
+  ) %>%
+  filter(year == 2020) %>%
+  ggplot(aes(y = factor(rank), fill = genres)) +
+  geom_col(aes(x = n), alpha = 0.8) +
+  geom_text(aes(x = 0, label = genres, col = genres))
